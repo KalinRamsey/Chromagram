@@ -18,7 +18,7 @@ export const Header3 = (props: Header3Props) => {
       flex py-4 text-md xl:text-lg font-bold items-center`
     }>
       <div className="flex justify-center items-center h-10">
-        <p className={`${theme === 'dark' ? 'text-white' : 'text-black'} uppercase text-center whitespace-nowrap transform duration-[1500ms]`}>
+        <p className={`${theme === 'dark' ? 'text-white' : 'text-black'} uppercase text-center whitespace-nowrap transform delay-500 duration-1000`}>
           {title}
         </p>
       </div>

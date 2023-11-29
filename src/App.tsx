@@ -1,6 +1,6 @@
 import React, { Fragment, useContext, useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faStar, faHashtag, faLock, faCopy, faCheck, faCheckDouble, faClipboard, faClose,faTriangleCircleSquare, faCheckCircle, faMoon, faSun, faCircle, faFaceAngry, faFaceDizzy, faDashboard, faDharmachakra, faYinYang, faTShirt, faRadiation, faWalkieTalkie, faHamburger } from '@fortawesome/free-solid-svg-icons'
+import { faStar, faHashtag, faLock, faCopy, faCheck, faCheckDouble, faClipboard, faClose,faTriangleCircleSquare, faCheckCircle, faMoon, faSun, faCircle, faFaceAngry, faFaceDizzy, faDashboard, faDharmachakra, faYinYang, faTShirt, faRadiation, faWalkieTalkie, faHamburger, faMinus } from '@fortawesome/free-solid-svg-icons'
 
 
 import { Header1 } from './Elements/Header1';
@@ -12,6 +12,19 @@ import { Header4 } from './Elements/Header4';
 import { Switch } from '@headlessui/react';
 import { ThemeContext } from './Contexts/ThemeContext';
 
+interface ContrastScore {
+  ratio: string;
+  AA: string;
+  AAA: string;
+  AALarge: string;
+  AAALarge: string;
+}
+
+interface comboScore {
+  combo: string;
+  rating: ContrastScore;
+}
+
 function App() {
   // @ts-ignore
   const { theme, toggleTheme } = useContext(ThemeContext);
@@ -21,6 +34,7 @@ function App() {
   const [sampleFG, setSampleFG] = useState("");
   const [lockedColors, setLockedColors] = useState<string[]>([]);
   const [chosenColors, setChosenColors] = useState<string[]>([]);
+  const [colorRatings, setColorRatings] = useState<comboScore[]>([]);
 
   const instructions = [
     "Enter a desired color's hexadecimal value in the input field",
@@ -62,23 +76,32 @@ function App() {
     return randomHexCode
   }
 
-  const setRandomColors = () => {
-    let randomColors = ["#FFFFFF","","","", "#000000"];
+  const randomizeColors = () => {
+    console.log('randomizing colors!')
+    let randomColors = chosenColors;
 
-    for (let i = 1; i < 4; i++) {
-      randomColors[i] = addRandomColor()
+    for (let i = 0; i < randomColors.length; i++) {
+      if (!isLocked(randomColors[i])) {
+        randomColors[i] = addRandomColor()
+      }
     }
+
     setChosenColors(randomColors)
   }
 
   const resetColors = () => {
-    setRandomColors();
+    let baseColors = ["#FFFFFF","","","", "#000000"];
+
+    for (let i = 1; i < 4; i++) {
+      baseColors[i] = addRandomColor()
+    }
+    setChosenColors(baseColors)
+    setLockedColors([])
   }
   
-  const clearColors = () => {
+  const viewLockedColors = () => {
     // let unlockedColors = chosenColors.filter((color, i) => !lockedColors.includes(color))
     setChosenColors(lockedColors)
-    setLockedColors([])
   }
 
   const lockColors = (color1: string, color2: string) => {
@@ -101,6 +124,12 @@ function App() {
     return lockedColors.includes(color)
   }
 
+  const lockColor = (color: string) => {
+    if (!isLocked(color)) {
+      setLockedColors((colors) => [...colors, color])
+    }
+  }
+
   const unlockColor = (color: string) => {
     console.log('unlocking color...')
     if (!isLocked(color)) {
@@ -110,33 +139,63 @@ function App() {
 
     setLockedColors((colors) => colors.filter((c, i) => c !== color));
   }
+
+  const unlockColors = (colorArr: string[]) => {
+    setLockedColors((colors) => colors.filter((c, i) => !colorArr.includes(c)))
+  }
+
+  // const getComboRatio = async (colorFG: string, colorBG: string) => {
+  //   const fetchFG = colorFG.substring(1)
+  //   const fetchBG = colorBG.substring(1)
+
+  //   await fetch(`https://webaim.org/resources/contrastchecker/?fcolor=${fetchFG}&bcolor=${fetchBG}&api`)
+  //     .then(res => res.json())
+  //     .then(
+  //       (result) => {
+  //         const newComboRating = {
+  //           combo: `${colorBG} + ${colorFG}`,
+  //           rating: result
+  //         }
+  //         // setColorRatings(colorRatings => [...colorRatings, {
+  //         //   combo: `${colorFG}, ${colorBG}`,
+  //         //   rating: result
+  //         // }])
+  //       },
+  //       // Note: it's important to handle errors here
+  //       // instead of a catch() block so that we don't swallow
+  //       // exceptions from actual bugs in components.
+  //       (error) => {
+  //         console.log(error)
+  //       }
+  //     )
+  //     .catch((e) => {
+  //       console.log(e)
+  //     })
+  //     .finally(() => {
+  //       console.log('combo ratio fetched')
+  //     })
+  // }
   
-  const compareColors = (color1: string, color2: string) => {
-    let rateWCAG;
-    
-    // fetch(`https://webaim.org/resources/contrastchecker/?fcolor=${color2}&bcolor=${color1}&api`)
-    //   .then(res => res.json())
-    //   .then(
-    //     (result) => {
-    //       console.log(result)
-    //     },
-    //     // Note: it's important to handle errors here
-    //     // instead of a catch() block so that we don't swallow
-    //     // exceptions from actual bugs in components.
-    //     (error) => {
-    //       console.log(error)
-    //     }
-    //   )
+  const renderColorCombos = (color1: string, color2: string) => {
+    // const comboRating = getComboRatio(color1, color2);
+    // console.log('rendering color combos...')
+    // console.log(comboRating)
     
     return (
       <div className='z-0 w-full h-full flex-1 flex justify-center items-center'>
         {color1 === color2 ? (
-          <div className="w-20 h-20 flex justify-center items-center">
-            <FontAwesomeIcon
-              icon={faCopy}
-              className={`${theme === 'dark' ? 'text-darkGray' : 'text-gray'} w-10 h-10 `}
-              onClick={() => copyColor(color1)}
-            />
+          <div style={{backgroundColor: color1}} className={`${theme === 'dark' ? 'outline-white' : 'outline-black'} relative w-20 h-20 flex flex-col outline outline-2 justify-betweenitems-center rounded-xl hover:cursor-pointer hover:justify-center`}>
+            <div className={`w-full h-full rounded-t-xl flex justify-center items-center`}>
+              <FontAwesomeIcon
+                icon={faCopy}
+                className={`${theme === 'dark' ? 'text-white bg-black border-white' : 'text-black bg-white border-black'} w-6 h-6 p-2 rounded-full border-2`}
+                onClick={() => copyColor(color1)}
+              />
+            </div>
+            
+            <p className={`${theme === 'dark' ? 'text-black bg-white' : 'bg-black text-white'} w-full text-center hidden md:inline text-xs px-2 py-1 rounded-b-xl font-bold`}>
+              {color1}
+            </p>
           </div>
         ) : (
           <button style={{backgroundColor: color2, borderColor: color2}}
@@ -145,7 +204,6 @@ function App() {
                 unlockColor(color1)
                 unlockColor(color2)
               } else {
-                lockColors(color1, color2)
                 setSampleBG(color2)
                 setSampleFG(color1)
               }
@@ -226,6 +284,11 @@ function App() {
   useEffect(() => {
     console.log('hex color changed')
   }, [hexColor])
+
+  useEffect(() => {
+    console.log('chosen colors changed!')
+    console.log(chosenColors)
+  }, [chosenColors])
   
   useEffect(() => {
     console.log('currently locked colors:')
@@ -233,21 +296,25 @@ function App() {
   }, [lockedColors])
 
   useEffect(() => {
-    setRandomColors()
+    // getComboRatio(sampleFG, sampleBG)
+  }, [sampleBG, sampleFG])
+
+  useEffect(() => {
+    resetColors()
     setLockedColors([])
 
-    if (theme === 'dark') {
-      setSampleBG('#000000');
+    if (theme === "dark") {
+      setSampleBG("#000000");
       setSampleFG("#ffffff");
     } else {
-      setSampleFG('#000000');
+      setSampleFG("#000000");
       setSampleBG("#ffffff");
     }
   }, [])
 
   return (
-    <main className={`${theme === 'dark' ? 'bg-black' : 'bg-white'} transition duration-[1000ms] font-mono absolute w-full h-screen flex flex-col overflow-hidden`}>
-        <div className={`${theme === 'dark' ? 'border-white' : 'border-black'} border-b-2 flex flex-row justify-between items-center py-4 px-4 md:px-20 xl:px-40`}>
+    <main className={`${theme === 'dark' ? 'bg-darkGray' : 'bg-gray'} transition delay-500 duration-1000 font-mono absolute w-full h-screen flex flex-col overflow-hidden`}>
+        <div className={`${theme === 'dark' ? 'border-white bg-black' : 'border-black bg-white'} border-b-2 flex flex-row justify-between items-center py-4 px-4 md:px-20 xl:px-40 transform duration-1000`}>
           <Header1
             title="Chromagram"
           />
@@ -266,7 +333,7 @@ function App() {
                   <span
                     className={`${checked
                       ? "translate-x-11 bg-black"
-                      : "translate-x-1 bg-black border-2 border-white"
+                      : "translate-x-1 bg-white"
                     } flex items-center p-2 justify-center h-8 w-8 first-letter: transform rounded-full transition duration-500`}
                   >
                     {checked ? (
@@ -277,7 +344,7 @@ function App() {
                     ) : (
                       <FontAwesomeIcon
                         icon={faSun}
-                        className='text-white text-xl'
+                        className='text-black text-xl'
                       />
                     )}
                   </span>
@@ -303,12 +370,12 @@ function App() {
                   className={`${theme === 'dark' ? 'border-white' : 'border-black'} h-40 w-40 border-2 rounded-full`}
                 />
 
-                <div className="h-full flex flex-1 gap-4 flex-col">
+                <div className="h-full w-full flex flex-1 gap-4 flex-col">
                   <label htmlFor="colorPicker" className={`${theme === 'dark' ? 'text-white' : 'text-black'} text-center`}>Enter Hexadecimal value:</label>
                   <div className="relative">
                     <FontAwesomeIcon
                       icon={faHashtag}
-                      className='absolute top-1/2 left-1 text-gray rounded-full h-4 w-4 p-2 transform -translate-y-1/2'
+                      className={`${theme === 'dark' ? 'text-gray' : 'text-darkGray'} absolute top-1/2 left-1 rounded-full h-4 w-4 p-2 transform -translate-y-1/2`}
                     />
                     <input
                       type="input"
@@ -330,35 +397,35 @@ function App() {
           </form>
 
           <section className={`${theme === 'dark' ? 'border-white' : 'border-black'} hidden md:flex flex-grow-0 flex-col relative top-0 right-0 h-full w-1/3 lg:w-1/4 overflow-y-hidden border-l-2`}>
-            <div className={`${theme === 'dark' ? 'border-white' : 'border-black'} sticky top-0 px-4 md:pr-20 xl:pr-40 border-b-2`}>
+            <div className={`${theme === 'dark' ? 'border-white bg-black' : 'border-black bg-white'} sticky top-0 px-4 md:pr-20 xl:pr-40 border-b-2 transform duration-1000`}>
               <Header3
-                  title='Instructions:'
-                  alignment='end'
-                  padding={chosenColors.length > 1}
-                />
-              </div>
+                title='Instructions:'
+                alignment='end'
+                padding={chosenColors.length > 1}
+              />
+            </div>
 
-              <div className={`${theme === 'dark' ? 'bg-darkGray' : 'bg-gray'} pb-4 pr-4 h-full overflow-y-scroll md:pr-20 xl:pr-40 transform duration-1000`}>
-                <ul className="flex flex-col text-left">
-                  {instructions.map((details, i) => (
-                    <li key={i}>
-                      <Header4
-                        title={`${i+1}`}
-                      />
+            <div className={`pb-4 pr-4 h-full overflow-y-scroll md:pr-20 xl:pr-40`}>
+              <ul className="flex flex-col text-left">
+                {instructions.map((details, i) => (
+                  <li key={i}>
+                    <Header4
+                      title={`${i+1}`}
+                    />
 
-                      <p className={`${theme === 'dark' ? 'text-white' : 'text-black'} pl-4`}>
-                        {details}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                    <p className={`${theme === 'dark' ? 'text-white' : 'text-black'} pl-4 transform duration-1000`}>
+                      {details}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </section>
         </section>
 
         <section className='z-20 flex-1 flex relative h-full flex-row w-screen overflow-scroll'>
-          <div className={`${theme === 'dark' ? 'border-white bg-black' : 'border-black bg-white'} z-50 flex sticky left-0 flex-col border-r-2 ${chosenColors.length >= 2 ? 'h-fit' : 'h-full'}`}>
-            <div className={`${theme === 'dark' ? 'bg-black border-white' : 'bg-white border-black'} sticky top-0 w-full border-b-2 px-4 md:pl-20 xl:pl-40 transform duration-1000`}>
+          <div className={`${theme === 'dark' ? 'border-white bg-black' : 'border-black bg-white'} z-50 flex sticky left-0 flex-col border-r-2 ${chosenColors.length >= 2 ? 'h-fit' : 'h-full'} transform duration-1000`}>
+            <div className={`${theme === 'dark' ? 'bg-black border-white' : 'bg-white border-black'} sticky z-30 top-0 w-full border-b-2 px-4 md:pl-20 xl:pl-40 transform duration-1000`}>
               <Header3
                 title="Manage Colors"
                 alignment='start'
@@ -374,13 +441,17 @@ function App() {
                   <button
                     onClick={() => removeColor(color)}
                     disabled={isLocked(color)}
-                    className={`${theme === 'dark'
-                      ? 'outline-white' && (lockedColors.includes(color) ? 'bg-darkGray text-white' : 'bg-white text-black')
-                      : ' text-white outline-black' && (lockedColors.includes(color) ? 'bg-gray text-black' : 'bg-black text-white')
-                      }  hidden md:inline p-2 rounded-full h-10 w-10 hover:outline-4 hover:outline`}
+                    className={`${isLocked(color)
+                      ? theme === 'dark'
+                        ? 'text-white bg-darkGray'
+                        : 'text-black bg-gray'
+                      : theme === 'dark'
+                        ? 'outline-white text-black hover:outline-4 hover:outline bg-white'
+                        : 'outline-black text-white hover:outline-4 hover:outline bg-black'
+                      } hidden md:inline p-2 rounded-full h-10 w-10`}
                   >
                     <FontAwesomeIcon 
-                      icon={isLocked(color) ? faLock : faClose}
+                      icon={isLocked(color) ? faMinus : faClose}
                     />
                   </button>
 
@@ -388,21 +459,30 @@ function App() {
                     {color}
                   </p>
                   
-                  <div
-                    style={{backgroundColor: color}}
-                    className={`${theme === 'dark' ? 'border-white' : 'border-black'} hidden md:flex w-10 h-10 rounded-full border-2`}
-                  />
-
                   <button
                     style={{backgroundColor: color}}
-                    className={`${theme === 'dark' ? 'border-white' : 'border-black'} md:hidden w-10 h-10 rounded-full border-2`}
-                    onClick={() => removeColor(color)}
-                  />
+                    onClick={() => {
+                      if (isLocked(color)) {
+                        unlockColor(color)
+                      } else {
+                        // lockColor(color)
+                        setSampleBG(color)
+                      }
+                    }}
+                    className={`${theme === 'dark' ? 'border-white' : 'border-black'} flex w-10 h-10 rounded-full border-2 justify-center items-center`}
+                  >
+                    {isLocked(color) && (
+                      <FontAwesomeIcon
+                        icon={faLock}
+                        className={`${theme=== 'dark' ? 'bg-white text-black' : 'bg-black text-white'} w-4 h-4 p-1 rounded-full rotate-[15deg]`}
+                      />
+                    )}
+                  </button>
                 </li>
               ))}
               <li className="w-full min-w-fit">
                 <button
-                  onClick={resetColors}
+                  onClick={randomizeColors}
                   className={`${theme === 'dark' ? 'text-black bg-white hover:outline-white' : 'text-white bg-black hover:outline-black'} uppercase whitespace-nowrap w-full p-4 rounded-full hover:cursor-pointer hover:outline-4 hover:outline focus:outline-4`}
                 >
                   Randomize
@@ -410,10 +490,18 @@ function App() {
               </li>
               <li className="w-full min-w-fit">
                 <button
-                  onClick={clearColors}
+                  onClick={viewLockedColors}
                   className={`${theme === 'dark' ? 'text-black bg-white hover:outline-white' : 'text-white bg-black hover:outline-black'} uppercase whitespace-nowrap w-full p-4 rounded-full hover:cursor-pointer hover:outline-4 hover:outline focus:outline-4`}
                 >
-                  Clear
+                  Locked Only
+                </button>
+              </li>
+              <li className="w-full min-w-fit">
+                <button
+                  onClick={resetColors}
+                  className={`${theme === 'dark' ? 'text-black bg-white hover:outline-white' : 'text-white bg-black hover:outline-black'} uppercase whitespace-nowrap w-full p-4 rounded-full hover:cursor-pointer hover:outline-4 hover:outline focus:outline-4`}
+                >
+                  Reset
                 </button>
               </li>
             </ul>
@@ -424,23 +512,36 @@ function App() {
               <ul className={`${theme === 'dark' ? 'border-white' : 'border-black'} flex flex-row relative w-fit border-r-2 ${chosenColors.length > 4 ? 'h-fit' : 'h-full'} ${lockedColors.length === 0 && 'border-b-2'}`}>
                 {chosenColors.map((color1, i) => (
                   <li key={`colorFG-${i}`}
-                    className='flex flex-col relative justify-start items-center gap-6'
+                    className='flex flex-col relative justify-start items-center'
                   >
                     <button
-                        onClick={() => removeColor(color1)}
-                        className={`${theme === 'dark' ? 'bg-black border-white' : 'bg-white border-black'} z-10 w-full sticky top-0 border-b-2 py-4 flex justify-center items-center`}
+                        onClick={() => {
+                          if (isLocked(color1)) {
+                            unlockColor(color1)
+                          } else {
+                            // lockColor(color1)
+                            setSampleFG(color1)
+                        }}}
+                        className={`${theme === 'dark' ? 'bg-black border-white' : 'bg-white border-black'} z-10 w-full sticky top-0 border-b-2 py-4 flex justify-center items-center transform duration-1000`}
                       >
                         <div style={{backgroundColor: color1}}
-                          className={`${theme === 'dark' ? 'border-white' : 'border-black'} w-10 h-10 rounded-full border-2`}
+                          className={`${theme === 'dark' ? 'border-white' : 'border-black'} w-10 h-10 flex justify-center items-center rounded-full border-2`}
                         >
-
+                          {isLocked(color1) && (
+                            <FontAwesomeIcon
+                              icon={faLock}
+                              className={`${theme=== 'dark' ? 'bg-white text-black' : 'bg-black text-white'} w-4 h-4 p-1 rounded-full rotate-[15deg]`}
+                            />
+                          )}
                         </div>
                     </button>
 
-                    <ul className={`flex flex-col -mt-2 gap-4 px-4 pb-2 ${chosenColors.length > 0 && 'pb-2'}`}>
+                    <ul className={`${isLocked(color1) ? theme === 'dark' ? 'bg-white' : 'bg-black' : ''} flex flex-col `}>
                       {chosenColors.map((color2, j) => (
-                        <li key={`colorSet-${i}-${j}`}>
-                          {compareColors(color1, color2)}
+                        <li key={`colorSet-${i}-${j}`}
+                          className={`${isLocked(color2) ? theme === 'dark' ? 'bg-white' : 'bg-black' : ''} ${j === 0 ? 'pt-4' : ''} p-2`}
+                        >
+                          {renderColorCombos(color1, color2)}
                         </li>
                       ))}
                     </ul>
@@ -449,14 +550,21 @@ function App() {
               </ul>
 
               <div className={`${theme === 'dark' ? 'border-white' : 'border-black'} ${lockedColors.length === 0 && 'border-b-2'} w-full h-full flex flex-col`}>
-                <div className={`${theme === 'dark' ? 'bg-black border-white' : 'bg-white border-black'} border-b-2 px-4 sticky top-0 right-0`}>
+                <div className={`${theme === 'dark' ? 'bg-black border-white' : 'bg-white border-black'} border-b-2 flex items-center justify-between sticky top-0 right-0 px-4 md:pr-20 xl:pr-40 transform duration-1000`}>
                   <Header3
                     title={"Sample"}
                     alignment='start'
                   />
+
+                  <button
+                    onClick={() => !isLocked(sampleFG) && !isLocked(sampleBG) ? lockColors(sampleFG, sampleBG) : unlockColors([sampleFG, sampleBG])}
+                    className={`${theme === 'dark' ? 'text-black bg-white hover:outline-white' : 'text-white bg-black hover:outline-black'} uppercase whitespace-nowrap h-fit p-4 rounded-full hover:cursor-pointer hover:outline-4 hover:outline focus:outline-4`}
+                  >
+                    {!isLocked(sampleFG) && !isLocked(sampleBG) ? 'Lock' : 'Unlock'}
+                  </button>
                 </div>
 
-                <div style={{background: sampleBG}} className={`flex gap-2 flex-1 flex-col w-full h-full p-4`}>
+                <div style={{background: sampleBG}} className={`flex gap-2 flex-1 flex-col w-full h-full p-4 md:pr-20 xl:pr-40`}>
                   <div className="flex justify-between items-center">
                     <header style={{color: sampleFG}}
                       className="text-3xl uppercase font-bold w-full whitespace-nowrap"
@@ -480,29 +588,38 @@ function App() {
                     </header>
                   </div>
 
-                  <div className="flex w-full flex-wrap justify-center gap-2">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 w-full justify-center content-center items-center gap-2">                    
+                    <div className="w-full flex justify-center">
+                      <FontAwesomeIcon
+                        icon={faFaceDizzy}
+                        style={{color: sampleFG}}
+                        className='p-4 rounded-full w-20 h-20'
+                      />
+                    </div>
                     
-                    <FontAwesomeIcon
-                      icon={faFaceDizzy}
-                      style={{color: sampleFG}}
-                      className='p-4 rounded-full w-20 h-20'
-                    />
-                    <FontAwesomeIcon
-                      icon={faYinYang}
-                      style={{color: sampleFG}}
-                      className='p-4 rounded-full w-20 h-20'
-                    />
-                    <FontAwesomeIcon
-                      icon={faTShirt}
-                      style={{color: sampleFG}}
-                      className='p-4 rounded-full w-20 h-20'
-                    />
-                    <FontAwesomeIcon
-                      icon={faRadiation}
-                      style={{color: sampleFG}}
-                      className='p-4 rounded-full w-20 h-20'
-                    />
+                    <div className="w-full flex justify-center">
+                      <FontAwesomeIcon
+                        icon={faYinYang}
+                        style={{color: sampleFG}}
+                        className='p-4 rounded-full w-20 h-20'
+                      />  
+                    </div>
+
+                    <div className="w-full flex justify-center">
+                      <FontAwesomeIcon
+                        icon={faTShirt}
+                        style={{color: sampleFG}}
+                        className='p-4 rounded-full w-20 h-20'
+                      />
+                    </div>
                     
+                    <div className="w-full flex justify-center">
+                      <FontAwesomeIcon
+                        icon={faRadiation}
+                        style={{color: sampleFG}}
+                        className='p-4 rounded-full w-20 h-20'
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -510,7 +627,7 @@ function App() {
             
             {lockedColors.length > 0 && (
               <div className={`${theme === 'dark' ? 'border-white' : 'border-black'} border-t-2 h-full w-full`}>
-                <div className={`${theme === 'dark' ? 'border-white' : 'border-black'} px-4 border-b-2 flex flex-row items-center justify-between gap-4 w-full`}>
+                <div className={`${theme === 'dark' ? 'border-white bg-black' : 'border-black bg-white'} px-4 border-b-2 flex flex-row items-center justify-between gap-4 w-full`}>
                   <Header3
                     title='Locked Colors'
                     alignment='start'

@@ -12,7 +12,7 @@ export const Header1 = (props: Header1Props) => {
 
   return (
     <header className="flex justify-center text-3xl lg:text-5xl font-bold">
-      <p className={`${theme === 'dark' ? 'text-white' : 'text-black'} uppercase text-center transform duration-[5000ms]`}>
+      <p className={`${theme === 'dark' ? 'text-white' : 'text-black'} uppercase text-center transform delay-500 duration-1000`}>
         {title}
       </p>
     </header>
